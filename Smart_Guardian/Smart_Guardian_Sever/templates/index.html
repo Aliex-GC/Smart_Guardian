@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMART GUARDIAN</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            position: relative;
+        }
+        h1 {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 24px;
+            color: #24198b;
+        }
+        video {
+            max-width: 600px;
+            width: 100%;
+            border: 2px solid #000;
+        }
+        .chat-container {
+            width: 300px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            position: absolute;
+            right: 10px;
+            bottom: 10px;
+        }
+        .chat-header {
+            background-color: #24198b;
+            color: white;
+            text-align: center;
+            padding: 10px;
+            font-size: 20px;
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
+        }
+        .chat-box {
+            height: 200px;
+            padding: 10px;
+            overflow-y: auto;
+            border-bottom: 2px solid #ddd;
+        }
+        .message {
+            margin: 5px 0;
+            padding: 8px;
+            border-radius: 5px;
+            background-color: #f1f1f1;
+            width: fit-content;
+        }
+        .user-message {
+            background-color: #e0f7fa;
+            align-self: flex-end;
+        }
+        .bot-message {
+            background-color: #dcedc8;
+        }
+        .input-area {
+            display: flex;
+            padding: 10px;
+            background-color: #f4f4f9;
+        }
+        .input-area input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-right: 10px;
+        }
+        .input-area button {
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .input-area button:hover {
+            background-color: #3317bb;
+        }
+    </style>
+</head>
+<body>
+    <h1>SMART GUARDIAN</h1>
+    <p>识别到的名字: <span id="recognized-name">{{ recognized_name }}</span></p>
+    <div class="chat-container">
+        <div class="chat-header">智能语音机器人</div>
+        <div id="chat-box" class="chat-box">
+            <!-- Messages will appear here -->
+        </div>
+        <div class="input-area">
+            <button id="chatButton" onclick="startChat()">开始聊天</button>
+        </div>
+    </div>
+
+    <script>
+        function startChat() {
+            const chatBox = document.getElementById('chat-box');
+            document.getElementById("chatButton").innerText = "正在录音";
+            // 向后端发送请求获取用户输入和机器人回复
+            fetch('', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': '{{ csrf_token }}',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                // 显示用户的输入信息
+                const userMessageDiv = document.createElement('div');
+                userMessageDiv.classList.add('message', 'user-message');
+                userMessageDiv.textContent = data.user_message;
+                chatBox.appendChild(userMessageDiv);
+
+                // 显示机器人的回复
+                const botMessageDiv = document.createElement('div');
+                botMessageDiv.classList.add('message', 'bot-message');
+                botMessageDiv.textContent = data.bot_message;
+                chatBox.appendChild(botMessageDiv);
+
+                chatBox.scrollTop = chatBox.scrollHeight; // 滚动到最新的消息
+                document.getElementById("chatButton").innerText = "开始聊天";
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById("chatButton").innerText = "开始聊天";
+            });
+        }
+    </script>
+
+
+<video id="webcam" autoplay></video>
+
+<script>
+    const videoElement = document.getElementById('webcam');
+
+    // Check if the browser supports getUserMedia
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({ video: true })
+        .then(function(stream) {
+            // Set the video element's source to the webcam stream
+            videoElement.srcObject = stream;
+        })
+        .catch(function(error) {
+            console.error("Error accessing webcam:", error);
+        });
+    } else {
+        alert("Your browser does not support accessing the webcam.");
+    }
+</script>
+<script>
+        // 定时请求识别结果
+        setInterval(function() {
+            fetch('/get_recognized_name/')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('recognized-name').textContent = data.recognized_name;
+                });
+        }, 2000);  // 每2秒请求一次
+    </script>
+</body>
+</html>
